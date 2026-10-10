@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Заполнение Excel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20261010-fix2">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=7YThmduahO0L3JCQqx_JhQ6y5p3oS-Va-Ue8m8BB3XsGuqJPY3z1vErmUUEv8DL779ydLbwAgBhUn8jhka_lGregvV0CnSOVmGJjuStUeHoe99UPzZthd5VfvbsGp2Zb8_K3N7VmkZ-7gCEOj9QgaoLNBEqBcNbfHOpVl0fSVJKrEbGrZZEpeko6mZYutGlhfLwusWxIOPblKBAOB8jHpCxg8YxFKnaNDeEp6bZ3FrOCvEGnrNHespebE0xqz9nT7ATYrdOaP81IuMUbmC3R_4CMYuYkJydJ9i3oQmxHt1iAjxOTBiRU20poQ-8lpgbM" charset="UTF-8"></script></head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <i class="fas fa-file-excel"></i>
+                <span>Excel Tool</span>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <button class="sidebar-item active" id="sidebar-start" onclick="console.log('sidebar-start clicked');location.reload()">
+                <i class="fas fa-redo"></i>
+                <span>Начать заново</span>
+            </button>
+        </nav>
+        <div class="sidebar-footer">
+            <span id="session-badge-sidebar" class="badge hidden">ID: <span id="session-id-sidebar"></span></span>
+        </div>
+    </div>
+
+    <div class="main-wrapper">
+        <header class="app-header">
+            <div class="header-content">
+                <h1><i class="fas fa-file-excel"></i> Заполнение Excel</h1>
+                <p class="subtitle">Получение данных из файлов для заполнения шаблона</p>
+            </div>
+            <div class="header-actions">
+                <span id="session-badge" class="badge hidden">Сессия: <span id="session-id"></span></span>
+            </div>
+        </header>
+
+        <main class="app-main">
+            <div class="progress-stepper" id="progress-stepper">
+                <div class="step" data-step="1">
+                    <div class="step-circle">1</div>
+                    <div class="step-label">Шаблон</div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step" data-step="2">
+                    <div class="step-circle">2</div>
+                    <div class="step-label">Словарь</div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step" data-step="3">
+                    <div class="step-circle">3</div>
+                    <div class="step-label">Документы</div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step" data-step="4">
+                    <div class="step-circle">4</div>
+                    <div class="step-label">Экстракт</div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step" data-step="5">
+                    <div class="step-circle">5</div>
+                    <div class="step-label">Валидация</div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step" data-step="6">
+                    <div class="step-circle">6</div>
+                    <div class="step-label">Генерация</div>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <section id="step-template" class="step-panel active">
+                    <h2><i class="fas fa-upload"></i> Загрузить Excel-шаблон</h2>
+                    <p class="panel-description">Загрузите Excel-файл с именованными диапазонами. Система проанализирует структуру шаблона.</p>
+                    
+                    <div class="upload-row">
+                        <div class="upload-zone" id="template-upload-zone">
+                            <input type="file" id="template-file" accept=".xlsx,.xls" style="display: none;">
+                            <div class="upload-content">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <p>Перетащите файл или нажмите, чтобы выбрать Excel-шаблон</p>
+                                <span class="hint">Файлы .xlsx, .xls с именованными диапазонами</span>
+                            </div>
+                        </div>
+                        <div class="upload-action">
+                            <button class="btn btn-primary" id="btn-next-dictionary" disabled onclick="console.log('INLINE onclick fired');showStep(2)">Выбор словаря</button>
+                        </div>
+                    </div>
+                    
+                    <div id="template-info" class="info-panel hidden">
+                        <h3>Анализ шаблона</h3>
+                        <div class="named-ranges-list" id="named-ranges-list"></div>
+                    </div>
+                </section>
+
+                <section id="step-dictionary" class="step-panel">
+                    <h2><i class="fas fa-book"></i> Загрузить словарь полей</h2>
+                    <p class="panel-description">Загрузите словарь, связывающий имена полей с описаниями для подсказок LLM при извлечении.</p>
+                    
+                    <div class="upload-row">
+                        <div class="upload-zone" id="dictionary-upload-zone">
+                            <input type="file" id="dictionary-file" accept=".json,.xlsx,.xls,.csv" style="display: none;">
+                            <div class="upload-content">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <p>Перетащите файл или нажмите, чтобы выбрать словарь</p>
+                                <span class="hint">Поддерживаются форматы .json, .xlsx, .xls, .csv</span>
+                            </div>
+                        </div>
+                        <div class="upload-action">
+                            <button class="btn btn-primary" id="btn-next-documents" disabled onclick="console.log('INLINE btn-next-documents clicked');showStep(3)">Выбор документов</button>
+                        </div>
+                    </div>
+                    
+                    <div id="dictionary-info" class="info-panel hidden">
+                        <h3>Соответствия полей</h3>
+                        <div class="mappings-table-container">
+                            <table class="mappings-table" id="mappings-table">
+                                <thead>
+                                    <tr>
+                                        <th>Field Name</th>
+                                        <th>Description</th>
+                                        <th>Entity Type</th>
+                                        <th>Data Type</th>
+                                        <th>Required</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="step-documents" class="step-panel">
+                    <h2><i class="fas fa-file-alt"></i> Загрузи требуемые документы</h2>
+                    <p class="panel-description">Загрузи один или несколько документов (PDF, DOCX, TXT, images) для получения данных из них</p>
+                    
+                    <div class="upload-row">
+                        <div class="upload-zone" id="documents-upload-zone">
+                            <input type="file" id="documents-file" accept=".pdf,.docx,.txt,.md,.csv,.json,.xlsx,.xls,.png,.jpg,.jpeg" multiple style="display: none;">
+                            <div class="upload-content">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <p>Drag & drop or click to select documents</p>
+                                <span class="hint">Multiple files supported: PDF, DOCX, TXT, images</span>
+                            </div>
+                        </div>
+                        <div class="upload-action">
+                            <button class="btn btn-primary" id="btn-next-extract" disabled onclick="console.log('INLINE btn-next-extract clicked');showStep(4);setTimeout(() => { console.log('INLINE setTimeout firing'); if (typeof startExtraction === 'function') startExtraction(); else console.log('startExtraction is NOT a function'); }, 100)">Запускаем экстракт данных</button>
+                        </div>
+                    </div>
+                    
+                    <div id="documents-list" class="file-list hidden">
+                        <h3>Выбранные документы</h3>
+                        <ul id="documents-files"></ul>
+                    </div>
+                </section>
+
+                <section id="step-extract" class="step-panel">
+<h2><i class="fas fa-magic"></i> Экстракт данных с помощью LLM</h2>
+                     <p class="panel-description">Запускаю экстракцию данных из файлов - согласно справочнику</p>
+                     
+                     <div class="extraction-panel">
+                         <div class="extraction-controls">
+                             <button class="btn btn-primary" id="btn-manual-extract">Запустить экстракцию вручную</button>
+                             <div class="spinner hidden" id="extraction-spinner"></div>
+                         </div>
+                         
+                         <div id="extraction-progress" class="progress-panel hidden">
+                             <div class="progress-bar">
+                                 <div class="progress-fill" id="extraction-progress-fill"></div>
+                             </div>
+                             <p id="extraction-status">Initializing...</p>
+                         </div>
+                        
+                        <div id="extraction-result" class="result-panel hidden">
+                            <h3>Данные экстракта</h3>
+                            <div class="json-viewer" id="extracted-json"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="step-validate" class="step-panel">
+                    <div class="validation-header">
+                        <h2><i class="fas fa-check-circle"></i> Валидация и редактирование данных</h2>
+                        <button class="btn btn-primary" id="btn-generate-from-validate" onclick="console.log('INLINE btn-generate-from-validate clicked');showStep(6)">
+                            <i class="fas fa-file-excel"></i> Генерация Excel
+                        </button>
+                    </div>
+                    
+                    <div class="tabs" id="validation-tabs">
+                        <button class="tab-btn active" data-tab="fields">Fields</button>
+                        <button class="tab-btn" data-tab="tables">Tables</button>
+                        <button class="tab-btn" data-tab="raw">Raw JSON</button>
+                    </div>
+                    
+                    <div id="validation-summary" class="validation-summary"></div>
+                    
+                    <div class="tab-content">
+                        <div id="tab-fields" class="tab-panel active">
+                            <div class="fields-grid" id="fields-grid"></div>
+                        </div>
+                        
+                        <div id="tab-tables" class="tab-panel">
+                            <div class="tables-container" id="tables-container"></div>
+                        </div>
+                        
+                        <div id="tab-raw" class="tab-panel">
+                            <pre id="raw-json"></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="step-generate" class="step-panel">
+                    <h2><i class="fas fa-download"></i> Генерация выходного файла</h2>
+                    <p class="panel-description">Создание финального Excel-файла с валидированными данными</p>
+                    
+                    <div class="generation-panel">
+                        <div class="output-options">
+                            <div class="form-group">
+                                <label for="output-filename">Output Filename</label>
+                                <input type="text" id="output-filename" placeholder="output.xlsx">
+                            </div>
+                        </div>
+                        
+                        <div class="generation-controls">
+                            <button class="btn btn-primary btn-lg" id="btn-generate">
+                                <i class="fas fa-file-export"></i> Генерировать Excel
+                            </button>
+                            <div class="spinner hidden" id="generation-spinner"></div>
+                        </div>
+                        
+                        <div id="generation-progress" class="progress-panel hidden">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="generation-progress-fill"></div>
+                            </div>
+                            <p id="generation-status">Generating...</p>
+                        </div>
+                        
+                        <div id="generation-result" class="result-panel hidden">
+                            <div class="success-message">
+                                <i class="fas fa-check-circle"></i>
+                                <h3>File Generated Successfully!</h3>
+                                <p id="output-path"></p>
+                                <button class="btn btn-primary btn-lg" id="btn-download">
+                                    <i class="fas fa-download"></i> Download File
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <footer class="app-footer">
+            <p>Заполнение Excel - Powered by LLM & Flask</p>
+        </footer>
+    </div>
+
+    <div class="modal" id="edit-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Edit Field</h3>
+                <button class="modal-close" id="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group" id="modal-field-editor">
+                    <label id="modal-field-label">Field Name</label>
+                    <input type="text" id="modal-field-value" class="modal-input">
+                    <div id="modal-field-errors" class="field-errors"></div>
+                </div>
+                <div class="form-group hidden" id="modal-table-editor">
+                    <label>Edit Table Row</label>
+                    <div id="modal-table-fields"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="modal-cancel">Cancel</button>
+                <button class="btn btn-primary" id="modal-save">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="edit-table-row-modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3 id="table-row-modal-title">Edit Table Row</h3>
+                <button class="modal-close" id="table-row-modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="table-row-modal-fields"></div>
+                <div id="table-row-modal-errors" class="field-errors"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="table-row-modal-cancel">Cancel</button>
+                <button class="btn btn-primary" id="table-row-modal-save">Save Row</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}?v=20261010-fix2"></script>
+</body>
+</html>
